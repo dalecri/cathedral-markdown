@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cathedral Markdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+window.__TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": "night",
+  "zoom": 1,
+  "autoRotate": false
+}/*EDITMODE-END*/;
+</script>
+<style>
+  :root {
+    --note-bg: #ffffff; --note-bg-soft: #fbfbfa;
+    --note-ink: #1d1d1f; --note-ink-2: #6e6e73; --note-ink-3: #aeaeb2;
+    --note-rule: #e8e8eb; --note-rule-soft: #f1f1f3;
+    --note-yellow: #f5d44b; --note-yellow-soft: #fff4b3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--note-ink); background: var(--note-bg); overflow: hidden;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  ::selection { background: var(--note-yellow-soft); color: var(--note-ink); }
+  .app { display: grid; grid-template-columns: minmax(360px, 46%) 1fr; height: 100vh; width: 100vw; }
+
+  .pane-editor { position: relative; display: flex; flex-direction: column;
+    background: var(--note-bg); border-right: 1px solid var(--note-rule); }
+  .editor-side { position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, transparent, rgba(245,212,75,0.35), transparent); opacity: 0.7; }
+  .editor-toolbar { display: flex; align-items: center; gap: 4px; padding: 10px 14px;
+    border-bottom: 1px solid var(--note-rule-soft); background: var(--note-bg);
+    position: sticky; top: 0; z-index: 3; }
+  .editor-toolbar .tool-group { display: flex; align-items: center; gap: 2px;
+    padding: 0 6px; border-right: 1px solid var(--note-rule); }
+  .editor-toolbar .tool-group:last-child { border-right: 0; }
+  .editor-toolbar button { background: transparent; border: 0; color: var(--note-ink-2);
+    width: 30px; height: 28px; border-radius: 6px; font-size: 13px; font-family: inherit;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 100ms ease, color 100ms ease; }
+  .editor-toolbar button:hover { background: #f0f0f3; color: var(--note-ink); }
+  .editor-toolbar button.italic { font-style: italic; }
+  .editor-toolbar button.under { text-decoration: underline; }
+  .editor-toolbar button.strike { text-decoration: line-through; }
+  .editor-toolbar .style-pill { width: auto; padding: 0 10px; height: 28px;
+    font-weight: 500; font-size: 13px; color: var(--note-ink); border-radius: 6px; }
+  .editor-toolbar .style-pill .chev { color: var(--note-ink-3); margin-left: 6px; font-size: 10px; }
+  .toolbar-spacer { flex: 1; }
+  .editor-toolbar .meta { color: var(--note-ink-3); font-size: 12px; padding: 0 8px; }
+
+  .editor-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 56px 80px; }
+  .editor-date { color: var(--note-ink-3); font-size: 12px; margin-bottom: 18px; text-align: center; }
+  #editor { width: 100%; border: 0; outline: 0; resize: none; background: transparent;
+    color: var(--note-ink); font-family: inherit; font-size: 17px; line-height: 1.55;
+    padding: 0; caret-color: var(--note-ink); letter-spacing: -0.003em; min-height: 100%; tab-size: 2; }
+  #editor::placeholder { color: var(--note-ink-3); }
+  .editor-status { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 22px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--note-ink-3);
+    background: linear-gradient(180deg, rgba(255,255,255,0), var(--note-bg) 60%);
+    pointer-events: none; z-index: 2; }
+
+  .pane-cathedral { position: relative; overflow: hidden; background: #1a1a2a; }
+  #sky { position: absolute; inset: 0; transition: background 800ms ease; }
+  #sky::before { content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,0.35), transparent 50%),
+      radial-gradient(1px 1px at 28% 8%,  rgba(255,255,255,0.25), transparent 50%),
+      radial-gradient(1px 1px at 64% 18%, rgba(255,255,255,0.30), transparent 50%),
+      radial-gradient(1px 1px at 80% 34%, rgba(255,255,255,0.20), transparent 50%),
+      radial-gradient(1.5px 1.5px at 44% 12%, rgba(255,255,255,0.20), transparent 50%);
+    opacity: 0.7; mix-blend-mode: screen; pointer-events: none; }
+  #cathedral { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+
+  .hud { position: absolute; top: 16px; left: 16px;
+    display: inline-flex; gap: 8px; align-items: center;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px;
+    color: rgba(255,255,255,0.85); z-index: 4;
+    text-transform: uppercase; letter-spacing: 0.06em; pointer-events: none;
+    white-space: nowrap; background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    padding: 6px 10px; border-radius: 6px; }
+  .hud .dot { width: 6px; height: 6px; border-radius: 50%;
+    background: #f2c14e; box-shadow: 0 0 8px rgba(242,193,78,0.8); margin-right: 6px;
+    animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .stats { position: absolute; top: 16px; right: 16px; display: flex; gap: 14px;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px;
+    color: rgba(255,255,255,0.85); z-index: 4;
+    text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+    background: rgba(0,0,0,0.25); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    padding: 6px 12px; border-radius: 6px; }
+  .stats span + span::before { content: "•"; margin-right: 14px; opacity: 0.4; }
+
+  .controls { position: absolute; bottom: 16px; right: 16px; display: flex; gap: 6px; z-index: 4; }
+  .controls button { background: rgba(0,0,0,0.45); color: rgba(255,255,255,0.9);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    padding: 7px 12px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; border-radius: 6px;
+    transition: background 120ms ease, transform 120ms ease; }
+  .controls button:hover { background: rgba(0,0,0,0.65); transform: translateY(-1px); }
+  .hint { position: absolute; bottom: 16px; left: 16px;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px;
+    color: rgba(255,255,255,0.55); z-index: 4;
+    text-transform: uppercase; letter-spacing: 0.08em; pointer-events: none; }
+
+  #tweaks { position: absolute; top: 56px; right: 16px; width: 280px;
+    background: rgba(28,28,32,0.92); color: #f5f5f7;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.10); border-radius: 10px;
+    padding: 12px 14px 14px; z-index: 6;
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  #tweaks .tw-header { text-transform: uppercase; letter-spacing: 0.12em;
+    font-size: 10px; color: #8e8e93; margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(255,255,255,0.12); }
+  #tweaks .tw-row { display: grid; grid-template-columns: 76px 1fr auto;
+    align-items: center; gap: 8px; margin-bottom: 10px; }
+  #tweaks .tw-row label { color: #8e8e93; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.06em; }
+  #tweaks .tw-seg { grid-column: 2 / 4; display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2px; background: rgba(0,0,0,0.4); padding: 2px; border-radius: 6px; }
+  #tweaks .tw-seg button { background: transparent; color: #aeaeb2;
+    border: 0; padding: 5px 0; font-family: inherit; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; border-radius: 4px; }
+  #tweaks .tw-seg button.on { background: #f5d44b; color: #1c1c1e; }
+  #tweaks input[type="range"] { -webkit-appearance: none; appearance: none;
+    width: 100%; height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px; }
+  #tweaks input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; border-radius: 50%; background: #f5d44b; cursor: pointer;
+    border: 2px solid #1c1c1e; }
+  #tweaks input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%;
+    background: #f5d44b; cursor: pointer; border: 2px solid #1c1c1e; }
+  #tweaks .tw-val { color: #d1d1d6; font-size: 10px; min-width: 38px; text-align: right; }
+  #tweaks .tw-toggle { grid-column: 2 / 4; background: rgba(0,0,0,0.4); color: #aeaeb2;
+    border: 0; padding: 6px 10px; font-family: inherit; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; border-radius: 6px; text-align: center; }
+  #tweaks .tw-toggle.on { background: #5ac8fa; color: #1c1c1e; }
+  #tweaks .tw-actions { grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 14px; }
+  #tweaks .tw-actions button { background: rgba(0,0,0,0.4); color: #d1d1d6;
+    border: 1px solid rgba(255,255,255,0.10); padding: 7px;
+    font-family: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    cursor: pointer; border-radius: 6px; }
+  #tweaks .tw-foot { margin-top: 12px; padding-top: 10px;
+    border-top: 1px dashed rgba(255,255,255,0.12);
+    font-size: 10px; color: #8e8e93; line-height: 1.7; }
+  #tweaks .legend { display: inline-block; margin-right: 8px; white-space: nowrap; }
+  #tweaks .legend b { color: #d1d1d6; font-weight: 500; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 50% 50%; }
+    .pane-editor { border-right: 0; border-bottom: 1px solid var(--note-rule); }
+    .editor-scroll { padding: 18px 22px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <section class="pane-editor">
+    <div class="editor-side"></div>
+    <div class="editor-toolbar" role="toolbar" aria-label="Formatting">
+      <div class="tool-group">
+        <button class="style-pill" title="Style">Body <span class="chev">▾</span></button>
+      </div>
+      <div class="tool-group">
+        <button title="Bold" data-md="bold"><b>B</b></button>
+        <button class="italic" title="Italic" data-md="italic">I</button>
+        <button class="under" title="Underline">U</button>
+        <button class="strike" title="Strike">S</button>
+      </div>
+      <div class="tool-group">
+        <button title="Heading" data-md="h1">H₁</button>
+        <button title="Subheading" data-md="h2">H₂</button>
+      </div>
+      <div class="tool-group">
+        <button title="List" data-md="ul">•</button>
+        <button title="Numbered" data-md="ol">1.</button>
+        <button title="Quote" data-md="quote">”</button>
+        <button title="Code" data-md="code">⟨⟩</button>
+      </div>
+      <div class="toolbar-spacer"></div>
+      <span class="meta" id="meta-counter">0 words</span>
+    </div>
+    <div class="editor-scroll">
+      <div class="editor-date" id="editor-date">Today</div>
+      <textarea id="editor" spellcheck="false" placeholder="Start writing. Your cathedral begins at ground level…"></textarea>
+    </div>
+    <div class="editor-status">
+      <span>Cathedral Markdown</span>
+      <span id="cursor-info">type to build</span>
+    </div>
+  </section>
+
+  <section class="pane-cathedral">
+    <div id="sky"></div>
+    <canvas id="cathedral"></canvas>
+    <div class="hud"><span class="dot"></span>Live build</div>
+    <div class="stats" id="stats"></div>
+    <div class="hint">drag · scroll · rotate</div>
+    <div class="controls">
+      <button id="rotate-btn">↻ Rotate</button>
+      <button id="reset-btn">⌂ Reset</button>
+    </div>
+    <div id="tweaks"></div>
+  </section>
+</div>
+
+<script src="src/sample.js?v=6"></script>
+<script src="src/voxel.js?v=6"></script>
+<script src="src/architect.js?v=6"></script>
+<script src="src/app.js?v=6"></script>
+
+</body>
+</html>
